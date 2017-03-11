@@ -7,9 +7,10 @@ import ctypes
 from scipy import ndimage, interpolate
 from datetime import datetime
 
-CHUNK_SIZE = 8192
+CHUNK_SIZE = 8192*4
 AUDIO_FORMAT = pyaudio.paInt16
-SAMPLE_RATE = 16000
+AUDIO_DEVICE = 'USB PnP Audio Device(EEPROM): Audio (hw:2,0)'
+SAMPLE_RATE = 48000
 BUFFER_HOURS = 12
 AUDIO_SERVER_ADDRESS = ('localhost', 6000)
 
@@ -27,11 +28,27 @@ def process_audio(shared_audio, shared_time, shared_pos, lock):
 
     # open default audio input stream
     p = pyaudio.PyAudio()
-    stream = p.open(format=AUDIO_FORMAT, channels=1, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE)
+
+    dev_index=0
+    dev_cnt = p.get_device_count()
+    print('There are {} audio devices available.'.format(dev_cnt))
+    for i in range(0,dev_cnt):
+        # print the one which have maxInputChannels larger than 0
+        info=p.get_device_info_by_index(i)
+        if info['maxInputChannels'] >0:
+            dev_name = info['name']
+            sample_rate = info['defaultSampleRate']
+            print('Index {}: {}, {}'.format(i, dev_name, sample_rate))
+            if str(dev_name) == str(AUDIO_DEVICE):
+                dev_index = i
+                print('Index {} selected as input.'.format(i))
+
+
+    stream = p.open(format=AUDIO_FORMAT, channels=1, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE, input_device_index=dev_index)
 
     while True:
         # grab audio and timestamp
-        audio = np.fromstring(stream.read(CHUNK_SIZE), np.int16)
+        audio = np.fromstring(stream.read(CHUNK_SIZE), dtype=np.int16)
         current_time = time.time()
 
         # acquire lock
@@ -42,6 +59,8 @@ def process_audio(shared_audio, shared_time, shared_pos, lock):
 
         # record the maximum volume in this time slice
         shared_audio[shared_pos.value] = np.abs(audio).max()
+#        if shared_pos.value %8 == 0:
+#            print('maxVal: {}'.format(np.max(audio)))
 
         # increment counter
         shared_pos.value = (shared_pos.value + 1) % len(shared_time)
@@ -180,7 +199,7 @@ def process_requests(shared_audio, shared_time, shared_pos, lock):
 
 
 def init_server():
-    # figure out how big the buffer needs to be to contain BUFFER_HOURS of audio
+    # figure out how big the buffer needs t o be to contain BUFFER_HOURS of audio
     buffer_len = int(BUFFER_HOURS * 60 * 60 * (SAMPLE_RATE / float(CHUNK_SIZE)))
 
     # create shared memory
