@@ -9,7 +9,8 @@ from datetime import datetime
 
 CHUNK_SIZE = 8192*4
 AUDIO_FORMAT = pyaudio.paInt16
-AUDIO_DEVICE = 'USB PnP Audio Device(EEPROM): Audio (hw:2,0)'
+#AUDIO_DEVICE = 'USB PnP Audio Device(EEPROM): Audio (hw:2,0)'
+AUDIO_DEVICE = 'dsnooped2'
 SAMPLE_RATE = 48000
 BUFFER_HOURS = 12
 AUDIO_SERVER_ADDRESS = ('localhost', 6000)

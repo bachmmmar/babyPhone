@@ -63,7 +63,7 @@
             }
         });
 
-        var socket = new WebSocket("ws://raspberrypi:8090/ws");
+        var socket = new WebSocket("ws://%IP_ADDRESS%:8090/ws");
 
         socket.onmessage = function (message) {
             // update the text display
