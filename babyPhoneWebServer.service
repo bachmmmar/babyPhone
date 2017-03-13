@@ -1,0 +1,11 @@
+[Unit]
+Description=Python BabyPhone Web Server
+After=multi-user.target
+Requires=babyPhoneAudioServer.service
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 %PATH_TO_SCRIPT%/web_server.py
+
+[Install]
+WantedBy=multi-user.target
