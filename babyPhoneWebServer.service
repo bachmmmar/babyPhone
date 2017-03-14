@@ -1,6 +1,5 @@
 [Unit]
 Description=Python BabyPhone Web Server
-After=multi-user.target
 Requires=babyPhoneAudioServer.service
 
 [Service]

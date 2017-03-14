@@ -1,10 +1,11 @@
 [Unit]
 Description=Python BabyPhone Audio Server
-After=multi-user.target
+Requires=multi-user.target alsa-restore.service sound.target
 
 [Service]
 Type=idle
 ExecStart=/usr/bin/python3 %PATH_TO_SCRIPT%/audio_server.py
 
 [Install]
+RequiredBy=babyPhoneWebServer.service
 WantedBy=multi-user.target
