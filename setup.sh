@@ -44,9 +44,9 @@ checkSuccess $? "Replace Path for Audio Server"
 sudo sed -i "s+%PATH_TO_SCRIPT%+$(pwd)+" ${SYSTEMD_SCRIPT_DIR}babyPhoneWebServer.service
 checkSuccess $? "Replace Path for Web Server"
 
-exit 1
 sudo systemctl daemon-reload
 checkSuccess $? "reload script deamon"
+
 
 sudo systemctl enable babyPhoneAudioServer.service
 checkSuccess $? "Enable baby Phone Audio Server"
