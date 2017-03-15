@@ -86,7 +86,7 @@ def format_time_difference(time1, time2):
     return str(time_diff).split('.')[0]
 
 
-def process_requests(shared_audio, shared_time, shared_pos, lock):
+def process_requests(shared_audio, shared_time, shared_pos, lock, shared_running):
     """
     Handle requests from the web server. First get the latest data, and
      then analyse it to find the current noise state
