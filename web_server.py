@@ -50,10 +50,11 @@ def broadcast_mic_data():
                   "noise_threshold": NOISE_THRESHOLD,
                   "min_quiet_time": MIN_QUIET_TIME,
                   "min_noise_time": MIN_NOISE_TIME}
+
     try:
         conn = Client(AUDIO_SERVER_ADDRESS)
-    except:
-        print("Unexpected error: {}".format(sys.exc_info()[0]))
+    except ConnectionRefusedError as e:
+        print("No connection to audio server: {}".format(e))
         sys.exit(1)
         
     conn.send(parameters)
