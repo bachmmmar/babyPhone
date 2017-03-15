@@ -16,7 +16,7 @@ BUFFER_HOURS = 12
 AUDIO_SERVER_ADDRESS = ('localhost', 6000)
 
 
-def process_audio(shared_audio, shared_time, shared_pos, lock):
+def process_audio(shared_audio, shared_time, shared_pos, lock, shared_running):
     """
     Endless loop: Grab some audio from the mic and record the maximum
 
@@ -30,7 +30,7 @@ def process_audio(shared_audio, shared_time, shared_pos, lock):
     # open default audio input stream
     p = pyaudio.PyAudio()
 
-    dev_index=0
+    dev_index=-1
     dev_cnt = p.get_device_count()
     print('There are {} audio devices available.'.format(dev_cnt))
     for i in range(0,dev_cnt):
@@ -44,10 +44,13 @@ def process_audio(shared_audio, shared_time, shared_pos, lock):
                 dev_index = i
                 print('Index {} selected as input.'.format(i))
 
+    if dev_index==-1:
+        print("No Device named {} found.".format(AUDIO_DEVICE))
+        shared_running=False
 
     stream = p.open(format=AUDIO_FORMAT, channels=1, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE, input_device_index=dev_index)
 
-    while True:
+    while shared_running:
         # grab audio and timestamp
         audio = np.fromstring(stream.read(CHUNK_SIZE), dtype=np.int16)
         current_time = time.time()
@@ -71,6 +74,7 @@ def process_audio(shared_audio, shared_time, shared_pos, lock):
 
     # I've included the following code for completion, but unless the above
     #  loop is modified to include an interrupt it will never be executed
+    shared_running=False
     stream.stop_stream()
     stream.close()
     p.terminate()
@@ -95,7 +99,7 @@ def process_requests(shared_audio, shared_time, shared_pos, lock):
     """
 
     listener = Listener(AUDIO_SERVER_ADDRESS)
-    while True:
+    while shared_running:
         conn = listener.accept()
 
         # get some parameters from the client
@@ -198,6 +202,8 @@ def process_requests(shared_audio, shared_time, shared_pos, lock):
         conn.send(results)
         conn.close()
 
+    #exit while loop
+    shared_running=False
 
 def init_server():
     # figure out how big the buffer needs t o be to contain BUFFER_HOURS of audio
@@ -208,12 +214,13 @@ def init_server():
     shared_audio = mp.Array(ctypes.c_short, buffer_len, lock=False)
     shared_time = mp.Array(ctypes.c_double, buffer_len, lock=False)
     shared_pos = mp.Value('i', 0, lock=False)
+    shared_running = mp.Value('i', True, lock=False)    
 
     # start 2 processes:
     # 1. a process to continuously monitor the audio feed
     # 2. a process to handle requests for the latest audio data
-    p1 = mp.Process(target=process_audio, args=(shared_audio, shared_time, shared_pos, lock))
-    p2 = mp.Process(target=process_requests, args=(shared_audio, shared_time, shared_pos, lock))
+    p1 = mp.Process(target=process_audio, args=(shared_audio, shared_time, shared_pos, lock, shared_running))
+    p2 = mp.Process(target=process_requests, args=(shared_audio, shared_time, shared_pos, lock, shared_running))
     p1.start()
     p2.start()
 
