@@ -5,6 +5,7 @@ Requires=multi-user.target alsa-restore.service sound.target
 [Service]
 Type=idle
 ExecStart=/usr/bin/python3 %PATH_TO_SCRIPT%/audio_server.py
+Restart=always
 
 [Install]
 RequiredBy=babyPhoneWebServer.service

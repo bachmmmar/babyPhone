@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 
 import tornado.httpserver
@@ -49,7 +50,13 @@ def broadcast_mic_data():
                   "noise_threshold": NOISE_THRESHOLD,
                   "min_quiet_time": MIN_QUIET_TIME,
                   "min_noise_time": MIN_NOISE_TIME}
-    conn = Client(AUDIO_SERVER_ADDRESS)
+
+    try:
+        conn = Client(AUDIO_SERVER_ADDRESS)
+    except ConnectionRefusedError as e:
+        print("No connection to audio server: {}".format(e))
+        sys.exit(1)
+        
     conn.send(parameters)
     results = conn.recv()
     conn.close()
