@@ -15,6 +15,7 @@ SAMPLE_RATE = 48000
 BUFFER_HOURS = 12
 AUDIO_SERVER_ADDRESS = ('localhost', 6000)
 
+audio = np.empty((CHUNK_SIZE),dtype="int16")
 
 def process_audio(shared_audio, shared_time, shared_pos, lock, shared_running):
     """
@@ -47,37 +48,41 @@ def process_audio(shared_audio, shared_time, shared_pos, lock, shared_running):
     if dev_index==-1:
         print("No Device named {} found.".format(AUDIO_DEVICE))
         shared_running=False
+        
+    stream = p.open(format=AUDIO_FORMAT, channels=1, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE, input_device_index=dev_index, stream_callback = callback)
 
-    stream = p.open(format=AUDIO_FORMAT, channels=1, rate=SAMPLE_RATE, input=True, frames_per_buffer=CHUNK_SIZE, input_device_index=dev_index)
-
-    while shared_running:
-        # grab audio and timestamp
-        audio = np.fromstring(stream.read(CHUNK_SIZE), dtype=np.int16)
-        current_time = time.time()
+    
+# callback function to stream audio, another thread.
+def callback(in_data,frame_count, time_info, status):
+    audio = np.fromstring(in_data,dtype=numpy.int16)
+    current_time = time.time()
 
         # acquire lock
-        lock.acquire()
+    #lock.acquire()
 
         # record current time
-        shared_time[shared_pos.value] = current_time
+    shared_time[shared_pos.value] = current_time
 
         # record the maximum volume in this time slice
-        shared_audio[shared_pos.value] = np.abs(audio).max()
+    shared_audio[shared_pos.value] = np.abs(self.audio).max()
 #        if shared_pos.value %8 == 0:
 #            print('maxVal: {}'.format(np.max(audio)))
 
         # increment counter
-        shared_pos.value = (shared_pos.value + 1) % len(shared_time)
+    shared_pos.value = (shared_pos.value + 1) % len(shared_time)
 
         # release lock
-        lock.release()
+   # lock.release()
+    return (audio, pyaudio.paContinue)
+        
+
 
     # I've included the following code for completion, but unless the above
     #  loop is modified to include an interrupt it will never be executed
-    shared_running=False
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+#    shared_running=False
+#    stream.stop_stream()
+#    stream.close()
+#    p.terminate()
 
 
 def format_time_difference(time1, time2):
@@ -187,7 +192,12 @@ def process_requests(shared_audio, shared_time, shared_pos, lock, shared_running
         str_crying = "Baby noise for "
         str_quiet = "Baby quiet for "
         if len(crying_blocks) == 0:
-            time_quiet = str_quiet + format_time_difference(time_stamps[0], time_current)
+            try:
+                time_quiet = str_quiet + format_time_difference(time_stamps[0], time_current)
+            except IndexError as e:
+                print("Index error t={}, ts={}: {}".format(time_current,time_stamps[0],e))
+                shared_running=False
+                return
         else:
             if time_current - crying_blocks[-1]['stop'] < parameters['min_quiet_time']:
                 time_crying = str_crying + format_time_difference(crying_blocks[-1]['start'], time_current)
@@ -214,14 +224,15 @@ def init_server():
     shared_audio = mp.Array(ctypes.c_short, buffer_len, lock=False)
     shared_time = mp.Array(ctypes.c_double, buffer_len, lock=False)
     shared_pos = mp.Value('i', 0, lock=False)
-    shared_running = mp.Value('i', True, lock=False)    
-
+    shared_running = mp.Value('i', True, lock=False)
+    
     # start 2 processes:
     # 1. a process to continuously monitor the audio feed
     # 2. a process to handle requests for the latest audio data
-    p1 = mp.Process(target=process_audio, args=(shared_audio, shared_time, shared_pos, lock, shared_running))
+#    p1 = mp.Process(target=process_audio, args=(shared_audio, shared_time, shared_pos, lock, shared_running))
+    process_audio()
     p2 = mp.Process(target=process_requests, args=(shared_audio, shared_time, shared_pos, lock, shared_running))
-    p1.start()
+#    p1.start()
     p2.start()
 
 
