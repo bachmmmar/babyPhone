@@ -4,6 +4,7 @@ This Project extends the LittleSleeper by
 * push notification to the mobile phone using Pushjet
 * systemd services to run the application on startup
 * installation script for the necessary ressources
+* link to a audio live audio stream
 
 
 ## Installation
