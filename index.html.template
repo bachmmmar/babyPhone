@@ -13,7 +13,7 @@
         <div class="header">
             <nav>
                 <ul class="nav nav-pills pull-right">
-                    <li role="presentation"><a href="http://www.aicbt.com">AICBT Ltd</a></li>
+                    <li role="presentation"><a href="http://%IP_ADDRESS%:8000/raspi.m3u">Audio Stream</a></li>
                 </ul>
             </nav>
             <h3 class="text-muted">LittleSleeper</h3>
