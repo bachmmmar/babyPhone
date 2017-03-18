@@ -1,6 +1,8 @@
 import pyaudio
 import numpy as np
 import time
+import configparser
+import requests
 import multiprocessing as mp
 from multiprocessing.connection import Listener
 from scipy import ndimage, interpolate
@@ -18,11 +20,13 @@ class AudioServer:
     BUFFER_HOURS = 12
     AUDIO_SERVER_ADDRESS = ('localhost', 6000)
 
-    # global variables
-    lock = mp.Lock()
-    shared_audio = np.array([])
-    shared_time = np.array([])
-    shared_pos = 0
+    def __init__(self):
+        self.lock = mp.Lock()
+        self.shared_audio = np.array([])
+        self.shared_time = np.array([])
+        self.shared_pos = 0
+        self.pj_secret = ''
+        self.was_quiet = True
 
     def getIndexForDevice(audio_device_name):
         """ get the index of a recording device with name audio_device_name """
@@ -181,8 +185,11 @@ class AudioServer:
             else:
                 if time_current - crying_blocks[-1]['stop'] < parameters['min_quiet_time']:
                     time_crying = str_crying + AudioServer.format_time_difference(crying_blocks[-1]['start'], time_current)
+                    self.babyNoiseDetected()
                 else:
                     time_quiet = str_quiet + AudioServer.format_time_difference(crying_blocks[-1]['stop'], time_current)
+
+                    self.babyQuietDetected()
 
             # return results to webserver
             results = {'audio_plot': audio_plot,
@@ -226,7 +233,42 @@ class AudioServer:
         p.terminate()
         exit(0)
 
+    def babyNoiseDetected(self):
+        if self.was_quiet == True:
+            self.was_quiet = False
+            self.pushMessage("Baby Noise detected")
+
+    def babyQuietDetected(self):
+        self.was_quiet = True
+
+    def pushMessage(self,message):
+        data = {
+            "secret": str(self.pj_secret),
+            "message": str(message),
+            "title": "Baby Phone",
+            "level": 1,
+            "link": "ads"
+        }
+
+        r = requests.post('https://api.pushjet.io/message', data=data)
+
+        if r.status_code == requests.codes.ok:
+            print("successfuly sent notification!")
+        else:
+            print("couldn't send notification!")
+            print("code:"+ str(r.status_code))
+            print("headers:"+ str(r.headers))
+            print("content:"+ str(r.text))
+
+    def getConfiguration(self):
+        config = configparser.ConfigParser()
+        config.read('babyphone.ini')
+
+        pj = config['pushjet']
+        self.pj_secret = pj['secret']
+
 
 if __name__ == '__main__':
     audio_srv = AudioServer()
+    audio_srv.getConfiguration()
     audio_srv.run_server()
