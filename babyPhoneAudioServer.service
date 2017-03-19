@@ -4,6 +4,7 @@ Requires=multi-user.target alsa-restore.service sound.target
 
 [Service]
 Type=idle
+WorkingDirectory=%PATH_TO_SCRIPT%
 ExecStart=/usr/bin/python3 %PATH_TO_SCRIPT%/audio_server.py
 Restart=always
 
