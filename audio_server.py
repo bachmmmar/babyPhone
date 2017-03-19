@@ -19,14 +19,18 @@ class AudioServer:
     SAMPLE_RATE = 48000
     BUFFER_HOURS = 12
     AUDIO_SERVER_ADDRESS = ('localhost', 6000)
+    PUSH_TIME_LIMIT = 50
 
     def __init__(self):
+        self.audio_device = ''
         self.lock = mp.Lock()
         self.shared_audio = np.array([])
         self.shared_time = np.array([])
         self.shared_pos = 0
         self.pj_secret = ''
+        self.pj_link = ''
         self.was_quiet = True
+        self.last_time_pushed = time.time()
 
     def getIndexForDevice(audio_device_name):
         """ get the index of a recording device with name audio_device_name """
@@ -202,9 +206,9 @@ class AudioServer:
     def run_server(self):
         """ initialize audio server and provide audio samples to a webserver """
 
-        dev_index = AudioServer.getIndexForDevice(AudioServer.AUDIO_DEVICE)
+        dev_index = AudioServer.getIndexForDevice(self.audio_device)
         if dev_index==-1:
-            print("No Device named {} found.".format(AudioServer.AUDIO_DEVICE))
+            print("No Device named {} found.".format(self.audio_device))
             exit(1)
 
         # figure out how big the buffer needs t o be to contain BUFFER_HOURS of audio
@@ -222,6 +226,7 @@ class AudioServer:
         stream = p.open(format=AudioServer.AUDIO_FORMAT, channels=1, rate=AudioServer.SAMPLE_RATE, input=True, frames_per_buffer=AudioServer.CHUNK_SIZE,
                     input_device_index=dev_index, stream_callback=self.callback)
 
+        self.pushMessage("Babyphone started!")
         try:
             self.process_requests()
         except KeyboardInterrupt:
@@ -231,23 +236,30 @@ class AudioServer:
         stream.stop_stream()
         stream.close()
         p.terminate()
+        self.pushMessage("Babyphone stopped!")
         exit(0)
 
     def babyNoiseDetected(self):
-        if self.was_quiet == True:
+        """ Function to ensure that it was quied before sending a notification and limits the number of notifications per time"""
+        if self.was_quiet == True and (time.time() - self.last_time_pushed) > AudioServer.PUSH_TIME_LIMIT:
+            self.last_time_pushed = time.time()
             self.was_quiet = False
-            self.pushMessage("Baby Noise detected")
+            self.pushMessage("Baby is crying.")
 
     def babyQuietDetected(self):
         self.was_quiet = True
 
     def pushMessage(self,message):
+        if len(self.pj_secret) < 12:
+            print("no notification sent due to wrong pushjet secret.")
+            return
+
         data = {
             "secret": str(self.pj_secret),
             "message": str(message),
             "title": "Baby Phone",
             "level": 1,
-            "link": "ads"
+            "link": str(self.pj_link)
         }
 
         r = requests.post('https://api.pushjet.io/message', data=data)
@@ -261,11 +273,16 @@ class AudioServer:
             print("content:"+ str(r.text))
 
     def getConfiguration(self):
+        """ Read configuration parameters from config file """
         config = configparser.ConfigParser()
         config.read('babyphone.ini')
 
         pj = config['pushjet']
         self.pj_secret = pj['secret']
+        self.pj_link = pj['link']
+
+        ac = config['audio']
+        self.audio_device = ac['device']
 
 
 if __name__ == '__main__':

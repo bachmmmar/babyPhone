@@ -1,0 +1,6 @@
+[pushjet]
+secret=
+link=http://%IP_ADDRESS%:8090/
+
+[audio]
+device=USB PnP Audio Device(EEPROM): Audio (hw:2,0)
