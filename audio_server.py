@@ -3,6 +3,7 @@ import numpy as np
 import time
 import configparser
 import requests
+import os
 import multiprocessing as mp
 from multiprocessing.connection import Listener
 from scipy import ndimage, interpolate
@@ -14,8 +15,6 @@ class AudioServer:
     # configuration
     CHUNK_SIZE = 8192*4
     AUDIO_FORMAT = pyaudio.paInt16
-    AUDIO_DEVICE = 'USB PnP Audio Device(EEPROM): Audio (hw:2,0)'
-    #AUDIO_DEVICE = 'dsnooped2'
     SAMPLE_RATE = 48000
     BUFFER_HOURS = 12
     AUDIO_SERVER_ADDRESS = ('localhost', 6000)
@@ -29,6 +28,7 @@ class AudioServer:
         self.shared_pos = 0
         self.pj_secret = ''
         self.pj_link = ''
+        self.pj_activationfile = '/tmp/enable_baby_notifications'
         self.was_quiet = True
         self.last_time_pushed = time.time()
 
@@ -241,7 +241,7 @@ class AudioServer:
 
     def babyNoiseDetected(self):
         """ Function to ensure that it was quied before sending a notification and limits the number of notifications per time"""
-        if self.was_quiet == True and (time.time() - self.last_time_pushed) > AudioServer.PUSH_TIME_LIMIT:
+        if self.was_quiet == True and (time.time() - self.last_time_pushed) > AudioServer.PUSH_TIME_LIMIT and os.path.isfile(self.pj_activationfile):
             self.last_time_pushed = time.time()
             self.was_quiet = False
             self.pushMessage("Baby is crying.")
