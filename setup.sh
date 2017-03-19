@@ -29,6 +29,12 @@ cp index.html.template index.html
 sed -i "s/%IP_ADDRESS%/$IP_ADDR/" index.html
 checkSuccess $? "Replace server IP in index.html"
 
+cp babyphone.ini.template babyphone.ini
+sed -i "s/%IP_ADDRESS%/$IP_ADDR/" babyphone.ini
+checkSuccess $? "Replace server IP in babyphone.ini"
+
+echo "To use Pushjet, add the application secrete to babyphone.ini!"
+
 
 # Install start scripts
 SYSTEMD_SCRIPT_DIR=/etc/systemd/system/
