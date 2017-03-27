@@ -15,7 +15,7 @@ WEB_SERVER_ADDRESS = ('0.0.0.0', 8090)
 
 # The highest (practical) volume for the microphone, which is used to normalize the signal
 #  This depends on: microphone sensitivity, distance to crib, amount of smoothing
-UPPER_LIMIT = 4000
+UPPER_LIMIT = 7000
 
 # After the signal has been normalized to the range [0, 1], volumes higher than this will be
 #  classified as noise.
