@@ -170,7 +170,7 @@ class AudioServer:
 
                     # save some info about the noise block
                     crying_blocks.append({'start': start,
-                                          'start_str': datetime.fromtimestamp(start).strftime("%I:%M:%S %p").lstrip('0'),
+                                          'start_str': datetime.fromtimestamp(start).strftime("%H:%M:%S").lstrip('0'),
                                           'stop': stop,
                                           'duration': AudioServer.format_time_difference(start, stop)})
 

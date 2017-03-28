@@ -71,11 +71,13 @@
             $("#time_crying").text(JSON.parse(message.data).time_crying);
 
             // update the history table
-            var table = "<tr><th>Baby noise start</th><th>Duration</th></tr>";
+            var table = "";
             $.each(JSON.parse(message.data).crying_blocks, function( index, crying_block ) {
                table = "<tr><td>" + crying_block.start_str + "</td><td>" + crying_block.duration + "</td></tr>" + table;
             });
-            $("#history_table").html(table);
+
+	    table = "<tr><th>Baby noise start</th><th>Duration</th></tr>" + table;
+	    $("#history_table").html(table);
 
             // update the plot of the volume levels for the past hour
             var data = JSON.parse(message.data).audio_plot;
