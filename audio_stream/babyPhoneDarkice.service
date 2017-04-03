@@ -1,0 +1,11 @@
+[Unit]
+Description=Darkice BabyPhone Audio Stream
+Requires=multi-user.target alsa-restore.service sound.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/darkice
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
