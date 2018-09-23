@@ -1,11 +1,13 @@
 [Unit]
 Description=Python BabyPhone Audio Server
 Requires=multi-user.target alsa-restore.service sound.target
+After=multi-user.target alsa-restore.service sound.target
 
 [Service]
 Type=idle
 WorkingDirectory=%PATH_TO_SCRIPT%
 ExecStart=/usr/bin/python3 %PATH_TO_SCRIPT%/audio_server.py
+ExecStartPre=/bin/sleep 5
 Restart=always
 
 [Install]
