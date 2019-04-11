@@ -85,7 +85,7 @@ def main():
     print('Listening on port: {}'.format(WEB_SERVER_ADDRESS[1]))
  
     main_loop = tornado.ioloop.IOLoop.instance()
-    scheduler = tornado.ioloop.PeriodicCallback(broadcast_mic_data, 1000, io_loop=main_loop)
+    scheduler = tornado.ioloop.PeriodicCallback(broadcast_mic_data, 1000) #, io_loop=main_loop)
     scheduler.start()
     main_loop.start()
  

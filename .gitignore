@@ -1,4 +1,7 @@
 # Byte-compiled / optimized / DLL files
+*~
+babyphone.ini
+index.html
 __pycache__/
 *.py[cod]
 
