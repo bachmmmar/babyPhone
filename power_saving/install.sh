@@ -21,3 +21,13 @@ checkSuccess $? "reload script deamon"
 sudo systemctl enable rpi_no_hdmi.service
 checkSuccess $? "Enable hdmi disabling script"
 
+
+sudo systemctl disable hciuart
+checkSuccess $? "Disable uart for bluetooth configuration"
+
+
+echo "dtoverlay=pi3-disable-wifi" | sudo tee -a /boot/config.txt
+checkSuccess $? "Disable wlan"
+
+echo "dtoverlay=pi3-disable-bt" | sudo tee -a /boot/config.txt
+checkSuccess $? "Disable bluetooth"
