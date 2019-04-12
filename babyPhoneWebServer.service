@@ -1,7 +1,5 @@
 [Unit]
 Description=Python BabyPhone Web Server
-Requires=babyPhoneAudioServer.service
-After=babyPhoneAudioServer.service
 
 [Service]
 Type=idle

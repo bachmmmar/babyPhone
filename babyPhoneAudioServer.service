@@ -1,6 +1,5 @@
 [Unit]
 Description=Python BabyPhone Audio Server
-Requires=multi-user.target alsa-restore.service sound.target
 After=multi-user.target alsa-restore.service sound.target
 
 [Service]
@@ -11,5 +10,4 @@ ExecStartPre=/bin/sleep 5
 Restart=always
 
 [Install]
-RequiredBy=babyPhoneWebServer.service
 WantedBy=multi-user.target
