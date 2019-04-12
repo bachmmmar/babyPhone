@@ -27,8 +27,9 @@ class AudioServer:
         self.shared_time = np.array([])
         self.shared_pos = 0
         self.pj_secret = ''
-        self.pj_link = ''
-        self.pj_activationfile = '/tmp/enable_baby_notifications'
+        self.ifttt_url = ''
+        self.notification_link = ''
+        self.notification_activationfile = '/tmp/enable_baby_notifications'
         self.was_quiet = True
         self.last_time_pushed = time.time()
 
@@ -241,7 +242,7 @@ class AudioServer:
 
     def babyNoiseDetected(self):
         """ Function to ensure that it was quied before sending a notification and limits the number of notifications per time"""
-        if self.was_quiet == True and (time.time() - self.last_time_pushed) > AudioServer.PUSH_TIME_LIMIT and os.path.isfile(self.pj_activationfile):
+        if self.was_quiet == True and (time.time() - self.last_time_pushed) > AudioServer.PUSH_TIME_LIMIT and os.path.isfile(self.notification_activationfile):
             self.last_time_pushed = time.time()
             self.was_quiet = False
             self.pushMessage("Baby is crying.")
@@ -250,19 +251,43 @@ class AudioServer:
         self.was_quiet = True
 
     def pushMessage(self,message):
-        if len(self.pj_secret) < 12:
-            print("no notification sent due to wrong pushjet secret.")
-            return
+        if len(self.pj_secret) == 12:
+            print("send notification through pushjet.")
+            self.pushMessageViaPushjet(message)
 
+        if len(self.ifttt_url) > 60:
+            print("send notification through ifttt.")
+            self.pushMessageViaIFTTT(message)
+        
+
+
+    def pushMessageViaPushjet(self,message):
         data = {
             "secret": str(self.pj_secret),
             "message": str(message),
             "title": "Baby Phone",
             "level": 1,
-            "link": str(self.pj_link)
+            "link": str(self.notification_link)
         }
 
         r = requests.post('https://api.pushjet.io/message', data=data)
+
+        if r.status_code == requests.codes.ok:
+            print("successfuly sent notification!")
+        else:
+            print("couldn't send notification!")
+            print("code:"+ str(r.status_code))
+            print("headers:"+ str(r.headers))
+            print("content:"+ str(r.text))
+
+    def pushMessageViaIFTTT(self,message):
+        data = {
+            "value1": str(message),
+            "value2": ":-)",
+            "value3": str(self.notification_link)
+        }
+
+        r = requests.post(self.ifttt_url, data=data)
 
         if r.status_code == requests.codes.ok:
             print("successfuly sent notification!")
@@ -277,9 +302,10 @@ class AudioServer:
         config = configparser.ConfigParser()
         config.read('babyphone.ini')
 
-        pj = config['pushjet']
-        self.pj_secret = pj['secret']
-        self.pj_link = pj['link']
+        noti = config['notification']
+        self.pj_secret = noti['pushjet_secret']
+        self.ifttt_url = noti['ifttt_url']
+        self.notification_link = noti['link']
 
         ac = config['audio']
         self.audio_device = ac['device']

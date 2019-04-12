@@ -22,7 +22,8 @@ sudo apt-get install libportaudio0 libportaudio2
 checkSuccess $? "Install necessary audio libraries"
 
 ###### Set own IP address in html and config ################
-IP_ADDR=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+#IP_ADDR=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+IP_ADDR=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 echo "Got IP address: $IP_ADDR"
 
 cp index.html.template index.html
